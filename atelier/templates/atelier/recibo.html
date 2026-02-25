@@ -1,0 +1,65 @@
+{% extends 'atelier/base.html' %}
+{% block content %}
+<div class="container py-4 no-print">
+    <button onclick="window.print()" class="btn btn-dark mb-3">
+        <i class="fas fa-print me-2"></i> Imprimir ou Salvar PDF
+    </button>
+</div>
+
+<div class="recibo-box mx-auto shadow-sm p-5 bg-white" style="max-width: 700px; border: 1px solid #eee;">
+    <div class="row align-items-center mb-4">
+        <div class="col-6">
+            {% load static %}
+            <img src="{% static 'img/logo_atelier.jpg' %}" alt="Logo Atelier" style="height: 60px;">
+            <br>
+            <small class="text-muted">Panos & Arte da Faby</small>
+        </div>
+        <div class="col-6 text-end">
+            <h4 class="mb-0">RECIBO #{{ venda.id }}</h4>
+            <p class="text-muted small">{{ venda.data_venda|date:"d/m/Y H:i" }}</p>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="mb-4">
+        <p class="mb-1 text-muted small text-uppercase fw-bold">Cliente</p>
+        <h5>{{ venda.nome_cliente|default:"Consumidor Final" }}</h5>
+    </div>
+
+    <table class="table table-borderless">
+        <thead class="border-bottom">
+            <tr>
+                <th>Descrição do Produto</th>
+                <th class="text-end">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ venda.produto.nome }}</td>
+                <td class="text-end">R$ {{ venda.valor_venda|stringformat:".2f" }}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr class="border-top fw-bold fs-5">
+                <td class="text-end">VALOR TOTAL:</td>
+                <td class="text-end text-success">R$ {{ venda.valor_venda|stringformat:".2f" }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="mt-5 text-center">
+        <p class="small text-muted mb-0">Forma de Pagamento: {{ venda.get_metodo_pagamento_display }}</p>
+        <p class="small text-muted italic">Obrigado pela preferência!</p>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .no-print, .navbar, .btn { display: none !important; }
+        body { background-color: white !important; }
+        .container { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+        .recibo-box { border: none !important; shadow: none !important; width: 100% !important; max-width: 100% !important; }
+    }
+</style>
+{% endblock %}

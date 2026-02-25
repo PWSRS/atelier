@@ -1,0 +1,79 @@
+{% extends 'atelier/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-layer-group me-2"></i>Controle de Estoque</h1>
+    <a href="{% url 'atelier:cadastrar_material' %}" class="btn btn-primary shadow-sm">
+        <i class="fas fa-plus me-1"></i> Novo Material
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">Nome do Material</th>
+                        <th class="text-center">Saldo Atual</th>
+                        <th>Unidade</th>
+                        <th>Preço Unitário</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for material in materiais %}
+                    <tr>
+                        <td class="ps-4 fw-bold">{{ material.nome }}</td>
+                        
+                        <td class="text-center">
+                            {% if material.quantidade_estoque <= 0 %}
+                                <span class="badge bg-danger">Esgotado</span>
+                            {% elif material.precisa_repor %} <span class="badge bg-warning text-dark">{{ material.quantidade_estoque }}</span>
+                                <i class="fas fa-exclamation-triangle text-warning small" title="Estoque Baixo"></i>
+                            {% else %}
+                                <span class="badge bg-success">{{ material.quantidade_estoque }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ material.unidade_medida }}</td>
+                        <td>R$ {{ material.preco_unitario|stringformat:".2f" }}</td>
+                        
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{% url 'atelier:registrar_entrada' %}?material={{ material.id }}" 
+                                   class="btn btn-sm btn-success" title="Nova Compra/Repor">
+                                    <i class="fas fa-truck-loading"></i>
+                                </a>
+                                
+                                <a href="{% url 'atelier:editar_material' material.id %}" 
+                                   class="btn btn-sm btn-outline-warning" title="Editar Cadastro">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <a href="{% url 'atelier:excluir_material' material.id %}" 
+                                   class="btn btn-sm btn-outline-danger" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            Seu estoque está vazio. Comece cadastrando algo!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'atelier:lista_produtos' %}" class="btn btn-link text-decoration-none text-muted">
+        <i class="fas fa-arrow-left me-1"></i> Voltar para Produtos
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'atelier/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card border-danger shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Atenção!</h4>
+            </div>
+            <div class="card-body text-center">
+                <p class="lead">Você tem certeza que deseja excluir o produto <strong>"{{ item.nome }}"</strong>?</p>
+                <p class="text-muted small">Essa ação não poderá ser desfeita e pode afetar produtos que usem este material.</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger px-4">Sim, Excluir</button>
+                    <a href="{% url 'atelier:lista_produtos' %}" class="btn btn-secondary px-4">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

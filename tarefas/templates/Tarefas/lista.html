@@ -1,0 +1,67 @@
+{% extends 'Tarefas/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/lista.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="header-container">
+    <h1>Minhas Tarefas</h1>
+    <a href="{% url 'criar_tarefa' %}" class="btn-add">
+        <i class="fas fa-plus"></i> Adicionar Nova
+    </a>
+</header>
+
+<ul class="task-list">
+    {% for t in tarefas %}
+    <li class="task-item">
+        <span class="task-info">
+            <strong>{{ t.titulo }}</strong> — 
+            <small class="{% if t.concluida %}status-done{% else %}status-pending{% endif %}">
+                {{ t.concluida|yesno:"Feito,Pendente" }}
+            </small>
+        </span>
+
+        <a href="{% url 'editar_tarefa' t.pk %}" class="btn-action btn-edit" title="Editar">
+            <i class="fas fa-edit"></i>
+        </a>
+        
+        <button type="button" class="btn-action btn-delete" 
+                onclick="abrirModal('{% url 'excluir_tarefa' t.pk %}', '{{ t.titulo|escapejs }}')"
+                title="Excluir">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+    </li>
+    {% empty %}
+    <li>Nenhuma tarefa encontrada. <a href="{% url 'criar_tarefa' %}">Crie a primeira!</a></li>
+    {% endfor %}
+</ul>
+
+<div id="meuModal" class="modal-overlay">
+    <div class="modal-content">
+        <i class="fas fa-exclamation-triangle modal-icon"></i>
+        <h3>Tem certeza?</h3>
+        <p>Você está prestes a excluir:<br><strong id="tituloModal"></strong></p>
+
+        <div class="modal-footer">
+            <form id="formDeletar" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn-confirm">Sim, Excluir</button>
+            </form>
+            <button type="button" onclick="fecharModal()" class="btn-cancel">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModal(url, titulo) {
+        document.getElementById('tituloModal').textContent = titulo;
+        document.getElementById('formDeletar').action = url;
+        document.getElementById('meuModal').style.display = 'block';
+    }
+    function fecharModal() {
+        document.getElementById('meuModal').style.display = 'none';
+    }
+</script>
+{% endblock %}

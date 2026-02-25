@@ -1,0 +1,173 @@
+{% extends 'atelier/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <form method="post" enctype="multipart/form-data" class="needs-validation">
+        {% csrf_token %}
+        
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-cut me-2"></i>Informações do Produto</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for field in form %}
+                        {% if "imagem" not in field.name %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="fas fa-camera me-2"></i>Galeria do Catálogo</h4>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <label class="form-label d-block fw-bold"><i class="fas fa-image me-1"></i> Frente</label>
+                            {{ form.imagem_frente }}
+                            <small class="text-muted d-block mt-2">Visão principal da peça</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <label class="form-label d-block fw-bold"><i class="fas fa-arrow-right me-1"></i> Lado</label>
+                            {{ form.imagem_lado }}
+                            <small class="text-muted d-block mt-2">Detalhes laterais</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <label class="form-label d-block fw-bold"><i class="fas fa-redo me-1"></i> Verso</label>
+                            {{ form.imagem_tras }}
+                            <small class="text-muted d-block mt-2">Acabamento traseiro</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-boxes me-2"></i>Composição (Materiais)</h4>
+                <span class="badge bg-secondary">Cálculo de Estoque</span>
+            </div>
+            <div class="card-body p-0">
+                {{ formset.management_form }}
+                <table class="table table-hover align-middle mb-0" id="tabela-materiais">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50%;">Material</th>
+                            <th style="width: 30%;">Quantidade</th>
+                            <th style="width: 20%;" class="text-center">Remover?</th>
+                        </tr>
+                    </thead>
+                    <tbody id="formset-container">
+                        {% for f in formset %}
+                        <tr class="formset-row">
+                            <td>
+                                {{ f.id }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                    {{ f.material }}
+                                </div>
+                            </td>
+                            <td>{{ f.quantidade_utilizada }}</td>
+                            <td class="text-center">
+                                <div class="delete-wrapper">
+                                    <input type="checkbox" name="{{ f.prefix }}-DELETE" id="{{ f.auto_id }}_DELETE" class="d-none">
+                                    <label for="{{ f.auto_id }}_DELETE" class="btn btn-outline-danger btn-sm border-0">
+                                        <i class="fas fa-trash-can"></i> 
+                                    </label>
+                                </div>
+                                {% for hidden in f.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <div class="p-3 bg-light border-top text-center">
+                    <button type="button" id="add-item" class="btn btn-outline-primary btn-sm rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-plus-circle me-1"></i> Adicionar outro material
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center bg-white p-3 border rounded shadow-sm">
+            <a href="{% url 'atelier:lista_produtos' %}" class="btn btn-outline-secondary px-4">
+                <i class="fas fa-arrow-left me-1"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-success btn-lg px-5 shadow">
+                <i class="fas fa-save me-1"></i> Calcular e Salvar Produto
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .delete-wrapper input[type="checkbox"] { display: none; }
+    .delete-wrapper input[type="checkbox"]:checked ~ label { background-color: #dc3545; color: white; border-radius: 4px; }
+    .formset-row { transition: all 0.3s ease; }
+    .formset-row td { padding: 0.75rem; }
+    input[type="file"] { font-size: 0.8rem; }
+</style>
+
+<script>
+    // [Seu script anterior de adicionar e remover linhas permanece o mesmo aqui]
+    document.getElementById('add-item').addEventListener('click', function() {
+        const container = document.querySelector('#formset-container');
+        const managementForm = document.querySelector('input[name$="-TOTAL_FORMS"]');
+        const currentFormCount = parseInt(managementForm.value);
+        const rows = container.querySelectorAll('tr.formset-row');
+        const newRow = rows[0].cloneNode(true);
+        const regex = new RegExp(`-${0}-`, 'g');
+        newRow.innerHTML = newRow.innerHTML.replace(regex, `-${currentFormCount}-`);
+        const inputs = newRow.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') { input.checked = false; } else { input.value = ''; }
+        });
+        container.appendChild(newRow);
+        managementForm.value = currentFormCount + 1;
+    });
+
+    document.querySelector('#formset-container').addEventListener('click', function(e) {
+        if (e.target.closest('.delete-wrapper label')) {
+            const row = e.target.closest('tr');
+            const checkbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            const idInput = row.querySelector('input[name$="-id"]');
+            if (idInput && !idInput.value) {
+                row.remove();
+            } else {
+                setTimeout(() => { // Timeout para esperar o checkbox mudar de estado
+                    if (checkbox.checked) {
+                        row.style.opacity = '0.3';
+                        row.style.backgroundColor = '#ffe5e5';
+                        row.style.textDecoration = 'line-through';
+                    } else {
+                        row.style.opacity = '1';
+                        row.style.backgroundColor = 'transparent';
+                        row.style.textDecoration = 'none';
+                    }
+                }, 10);
+            }
+        }
+    });
+</script>
+{% endblock %}

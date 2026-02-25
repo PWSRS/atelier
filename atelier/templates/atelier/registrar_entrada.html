@@ -1,0 +1,40 @@
+{% extends 'atelier/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-truck-loading me-2"></i>Repor Estoque de Material</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Selecione o Material</label>
+                            {{ form.material }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Quantidade Comprada</label>
+                                {{ form.quantidade_adicionada }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Preço Unitário (R$)</label>
+                                {{ form.preco_unitario_na_compra }}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg rounded-pill">
+                                <i class="fas fa-plus-circle me-1"></i> Confirmar Entrada
+                            </button>
+                            <a href="{% url 'atelier:lista_materiais' %}" class="btn btn-outline-secondary rounded-pill">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

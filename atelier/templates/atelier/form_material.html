@@ -1,0 +1,50 @@
+{% extends 'atelier/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7"> <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white py-3">
+                <h4 class="mb-0">
+                    {% if editando %} 
+                        <i class="fas fa-edit me-2"></i>Editando: {{ form.instance.nome }} 
+                    {% else %} 
+                        <i class="fas fa-plus me-2"></i>Cadastrar Novo Material 
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do Material</label>
+                        {{ form.nome }}
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Unidade (Ex: Metro, Un)</label>
+                            {{ form.unidade_medida }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Preço Unitário (R$)</label>
+                            {{ form.preco_unitario }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-primary">Saldo em Estoque</label>
+                            {{ form.quantidade_estoque }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-save me-1"></i> Salvar no Estoque
+                        </button>
+                        <a href="{% url 'atelier:lista_materiais' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

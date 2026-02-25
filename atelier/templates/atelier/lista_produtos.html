@@ -1,0 +1,160 @@
+{% extends 'atelier/base.html' %}
+{% block content %}
+
+{% if materiais_alerta %}
+<div class="alert alert-warning shadow-sm border-start border-4 border-warning">
+    <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Atenção: Reposição Necessária!</h4>
+    <p>Os seguintes materiais atingiram o nível crítico:</p>
+    <ul class="list-unstyled mb-0">
+        {% for material in materiais_alerta %}
+            <li class="d-flex justify-content-between align-items-center mb-2">
+                <span>
+                    <strong>{{ material.nome }}</strong> 
+                    (Restam apenas {{ material.quantidade_estoque }} {{ material.unidade_medida }})
+                </span>
+                <a href="{% url 'atelier:registrar_entrada' %}?material={{ material.id }}" class="btn btn-sm btn-warning shadow-sm fw-bold">
+                    <i class="fas fa-plus-circle me-1"></i> Repor Estoque
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="row mb-4 text-center">
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-primary">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase fw-bold">Investimento em Materiais</h6>
+                <h4 class="text-primary mb-0">R$ {{ total_estoque_valor|stringformat:".2f" }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-success">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase fw-bold">Faturamento Potencial</h6>
+                <h4 class="text-success mb-0">R$ {{ faturamento_potencial|stringformat:".2f" }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-warning">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase fw-bold">Lucro Líquido Estimado</h6>
+                <h4 class="text-warning mb-0">R$ {{ lucro_estimado|stringformat:".2f" }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fas fa-boxes me-2"></i>Catálogo de Peças</h5>
+        <a href="{% url 'atelier:criar_produto' %}" class="btn btn-primary btn-sm rounded-pill px-3">
+            <i class="fas fa-plus me-1"></i> Nova Peça
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" style="width: 80px;">Foto</th>
+                        <th>Peça</th>
+                        <th>Custo Mat.</th>
+                        <th>Mão de Obra</th>
+                        <th>Preço de Venda</th>
+                        <th>Lucro Real</th> 
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos %}
+                    <tr {% if produto.esta_vendido %} style="opacity: 0.5; background-color: #f8f9fa; transition: 0.3s;" {% endif %}>
+                        <td class="ps-4">
+                            {% if produto.imagem_frente %}
+                                <img src="{{ produto.imagem_frente.url }}" class="rounded shadow-sm object-fit-cover" 
+                                     style="width: 50px; height: 50px;" alt="{{ produto.nome }}">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center border" 
+                                     style="width: 50px; height: 50px;">
+                                    <i class="fas fa-image text-muted" style="font-size: 0.8rem;"></i>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'atelier:detalhar_produto' produto.id %}" class="text-decoration-none fw-bold text-dark">
+                                {{ produto.nome }}
+                            </a>
+                        </td>
+                        <td class="text-muted">R$ {{ produto.get_custo_total_materiais|stringformat:".2f" }}</td>
+                        
+                        <td class="small">
+                            <i class="far fa-clock me-1"></i>{{ produto.tempo_trabalho_horas }}h 
+                            <div class="text-muted" style="font-size: 0.75rem;">(R$ {{ produto.valor_hora_trabalho }}/h)</div>
+                        </td>
+                        
+                        <td>
+                            <span class="text-success fw-bold">R$ {{ produto.get_preco_final_sugerido|stringformat:".2f" }}</span>
+                            {% if produto.desconto_valor > 0 %}
+                                <div class="badge bg-danger-subtle text-danger p-1" style="font-size: 0.65rem;">
+                                    - R$ {{ produto.desconto_valor }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        
+                        <td>
+                            <span class="text-primary fw-bold">R$ {{ produto.get_lucro_liquido|stringformat:".2f" }}</span>
+                        </td>
+
+                       <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{% url 'atelier:editar_produto' produto.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                {% if produto.esta_vendido %}
+                                    {% with venda=produto.vendas.first %}
+                                        {% if venda %}
+                                            <a href="{% url 'atelier:gerar_recibo' venda.id %}" class="btn btn-sm btn-info text-white" title="Ver Recibo">
+                                                <i class="fas fa-file-invoice"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% endwith %}
+                                    
+                                    <span class="badge bg-secondary d-flex align-items-center px-2 ms-1">
+                                        <i class="fas fa-check-circle me-1"></i> Vendido
+                                    </span>
+
+                                {% else %}
+                                    <a href="{% url 'atelier:excluir_produto' produto.id %}" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                    <a href="{% url 'atelier:registrar_venda' produto.id %}" class="btn btn-sm btn-success" title="Vender">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="fas fa-info-circle mb-2"></i><br>Nenhum produto cadastrado.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .object-fit-cover { object-fit: cover; }
+    .table thead th { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .border-start { border-width: 5px !important; }
+</style>
+
+{% endblock %}

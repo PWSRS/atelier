@@ -1,0 +1,21 @@
+/* Configurações Globais */
+body {
+    font-family: Nunito, Carlito, Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #e7e4dd;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+.container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #e7bb41;
+}

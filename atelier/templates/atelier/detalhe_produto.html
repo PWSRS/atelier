@@ -1,0 +1,148 @@
+{% extends 'atelier/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <a href="{% url 'atelier:lista_produtos' %}" class="btn btn-outline-secondary btn-sm px-3">
+            <i class="fas fa-arrow-left me-1"></i> Voltar para Lista
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 overflow-hidden">
+                <div id="carouselProduto" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner bg-light" style="height: 450px;">
+                        {% if produto.imagem_frente %}
+                        <div class="carousel-item active h-100">
+                            <img src="{{ produto.imagem_frente.url }}" class="d-block w-100 h-100 object-fit-contain" alt="Frente">
+                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded">
+                                <p class="mb-0">Frente</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if produto.imagem_lado %}
+                        <div class="carousel-item h-100 {% if not produto.imagem_frente %}active{% endif %}">
+                            <img src="{{ produto.imagem_lado.url }}" class="d-block w-100 h-100 object-fit-contain" alt="Lado">
+                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded">
+                                <p class="mb-0">Lado</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if produto.imagem_tras %}
+                        <div class="carousel-item h-100 {% if not produto.imagem_frente and not produto.imagem_lado %}active{% endif %}">
+                            <img src="{{ produto.imagem_tras.url }}" class="d-block w-100 h-100 object-fit-contain" alt="Verso">
+                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded">
+                                <p class="mb-0">Verso</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if not produto.imagem_frente and not produto.imagem_lado and not produto.imagem_tras %}
+                        <div class="carousel-item active h-100 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-image text-muted fa-5x"></i>
+                            <p class="ms-3 text-muted">Sem imagens cadastradas</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselProduto" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
+                        <span class="visually-hidden">Anterior</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselProduto" data-bs-slide="next">
+                        <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
+                        <span class="visually-hidden">Próximo</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white p-3">
+                    <h5 class="mb-0 fw-bold">Análise Financeira</h5>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <h2 class="fw-bold text-primary">{{ produto.nome }}</h2>
+                        <p class="text-muted small">{{ produto.descricao|default:"Sem descrição adicional." }}</p>
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary">Mão de Obra:</span>
+                            <span class="fw-bold">R$ {{ custo_mao_de_obra|stringformat:".2f" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary">Total Materiais:</span>
+                            <span class="fw-bold">R$ {{ custo_materiais|stringformat:".2f" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-secondary">Custo Base:</span>
+                            <span class="fw-bold">R$ {{ custo_total_base|stringformat:".2f" }}</span>
+                        </div>
+
+                        {% if produto.desconto_valor > 0 %}
+                        <div class="d-flex justify-content-between mb-3 text-danger bg-danger bg-opacity-10 p-2 rounded">
+                            <span>Desconto Aplicado:</span>
+                            <strong>- R$ {{ produto.desconto_valor|stringformat:".2f" }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="bg-light p-4 rounded text-center border">
+                        <span class="d-block text-muted small text-uppercase fw-bold mb-1">Preço Final de Venda</span>
+                        <h1 class="text-success fw-bold mb-0">R$ {{ preco_final|stringformat:".2f" }}</h1>
+                        <div class="badge bg-primary mt-2 p-2">
+                            Lucro Real: R$ {{ valor_lucro|stringformat:".2f" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mt-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-secondary text-white p-3">
+                    <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Lista de Materiais</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Material</th>
+                                    <th>Qtd. Usada</th>
+                                    <th>Preço Unit.</th>
+                                    <th class="text-end pe-4">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in produto.materiais.all %}
+                                <tr>
+                                    <td class="ps-4 fw-bold text-dark">{{ item.material.nome }}</td>
+                                    <td>{{ item.quantidade_utilizada }} {{ item.material.unidade_medida }}</td>
+                                    <td>R$ {{ item.material.preco_unitario|stringformat:".2f" }}</td>
+                                    <td class="text-end pe-4 fw-bold">R$ {{ item.subtotal_material|stringformat:".2f" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .object-fit-contain {
+        object-fit: contain; /* Garante que a foto não seja cortada, mantendo a proporção */
+    }
+    .carousel-item {
+        background-color: #f8f9fa; /* Fundo cinza claro para fotos com fundo transparente */
+    }
+</style>
+{% endblock %}

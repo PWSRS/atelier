@@ -1,0 +1,33 @@
+{% extends 'Tarefas/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/form.css' %}">
+{% endblock %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nova{% endif %} Tarefa{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>
+        <i class="fas fa-clipboard-list"></i> 
+        {% if form.instance.pk %}Editar Tarefa{% else %}Nova Tarefa{% endif %}
+    </h1>
+    
+    <hr>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="django-form">
+            {{ form.as_p }}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-save">
+                <i class="fas fa-save"></i> Salvar
+            </button>
+            <a href="{% url 'listar_tarefas' %}" class="btn-cancel-link">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

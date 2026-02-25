@@ -1,0 +1,82 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribuição / Pacotes
+bin/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Ambientes Virtuais (VENV)
+venv/
+.venv/
+ENV/
+env/
+pythonenv*/
+
+# Configurações do Django
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+# Se você quiser ignorar os estáticos coletados (opcional)
+# static/
+
+# Variáveis de Ambiente (CRÍTICO)
+.env
+.flaskenv
+
+# Logs
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.pyo
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs (VS Code, PyCharm, etc)
+.vscode/
+.idea/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db

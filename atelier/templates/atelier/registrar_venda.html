@@ -1,0 +1,46 @@
+{% extends 'atelier/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-header bg-success text-white py-3">
+                <h4 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Registrar Venda</h4>
+            </div>
+            <div class="card-body p-4">
+                <h5 class="text-muted mb-4">Peça: <strong>{{ produto.nome }}</strong></h5>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do Cliente</label>
+                        {{ form.nome_cliente }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">WhatsApp (DDD + Número)</label>
+                        {{ form.telefone_cliente }}
+                        <div class="form-text">Apenas números. Ex: 51988887777</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Preço de Venda (R$)</label>
+                            {{ form.valor_venda }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Pagamento</label>
+                            {{ form.metodo_pagamento }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">Finalizar e Gerar Recibo</button>
+                        <a href="{% url 'atelier:lista_produtos' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

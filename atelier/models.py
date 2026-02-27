@@ -6,9 +6,18 @@ from django.dispatch import receiver
 
 
 class Material(models.Model):
+    
+    UNIDADE_CHOICES = [
+        ('metro', 'Metro'),
+        ('unidade', 'Unidade'),
+        ('rolo', 'Rolo'),
+        ('quilo', 'Quilo'),
+        ('grama', 'Grama'),
+    ]
+    
     nome = models.CharField(max_length=100)
     # Pode ser metro, unidade, rolo, etc.
-    unidade_medida = models.CharField(max_length=20) 
+    unidade_medida = models.CharField(max_length=20, choices=UNIDADE_CHOICES) 
     preco_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     quantidade_estoque = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     estoque_minimo = models.DecimalField(max_digits=10, decimal_places=2, default=1.0) # Alerta quando sobrar só 1 unidade

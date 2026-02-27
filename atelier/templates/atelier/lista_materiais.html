@@ -36,7 +36,7 @@
                             {% endif %}
                         </td>
 
-                        <td>{{ material.unidade_medida }}</td>
+                        <td>{{ material.get_unidade_medida_display }}</td>
                         <td>R$ {{ material.preco_unitario|stringformat:".2f" }}</td>
                         
                         <td class="text-center">

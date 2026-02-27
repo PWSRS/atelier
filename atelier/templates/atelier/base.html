@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -10,10 +11,14 @@
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-dark mb-4">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'atelier:lista_produtos' %}">Atelier Digital</a>
+            <a class="navbar-brand" href="{% url 'atelier:lista_produtos' %}">
+                <img src="{% static 'atelier/img/atelier.png' %}" width="30" height="30" >
+                Faby Panos & Arte
+            </a>
             <div>
                 <a href="{% url 'atelier:lista_materiais' %}" class="btn btn-outline-light btn-sm">Estoque</a>
-                <a href="{% url 'atelier:criar_produto' %}" class="btn btn-primary btn-sm">Novo Produto</a>
+                <a href="{% url 'atelier:criar_produto' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Novo Produto</a>
             </div>
         </div>
     </nav>

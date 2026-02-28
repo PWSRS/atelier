@@ -6,7 +6,7 @@ class MaterialForm(forms.ModelForm):
     class Meta:
         model = Material
         fields = ['nome', 'unidade_medida', 'preco_unitario', 'quantidade_estoque']
-    widgets = {
+        widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
             'unidade_medida': forms.Select(attrs={'class': 'form-select'}),
             'preco_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),

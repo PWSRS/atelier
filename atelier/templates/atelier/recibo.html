@@ -1,65 +1,91 @@
 {% extends 'atelier/base.html' %}
+{% load static %}
+
 {% block content %}
-<div class="container py-4 no-print">
-    <button onclick="window.print()" class="btn btn-dark mb-3">
+<div class="container py-4 no-print text-center">
+    <button onclick="window.print()" class="btn btn-dark mb-3 shadow-sm">
         <i class="fas fa-print me-2"></i> Imprimir ou Salvar PDF
     </button>
 </div>
 
-<div class="recibo-box mx-auto shadow-sm p-5 bg-white" style="max-width: 700px; border: 1px solid #eee;">
-    <div class="row align-items-center mb-4">
-        <div class="col-6">
-            {% load static %}
-            <img src="{% static 'atelier/img/atelier.png' %}" width="120" height="120" alt="Logo Atelier">
-            <br>
-            <!--<small class="text-muted">Faby Panos & Arte</small>-->
-        </div>
-        <div class="col-6 text-end">
-            <h4 class="mb-0">RECIBO #{{ venda.id }}</h4>
-            <p class="text-muted small">{{ venda.data_venda|date:"d/m/Y H:i" }}</p>
-        </div>
+<div class="recibo-box mx-auto shadow-sm pb-5 px-5 pt-0 bg-white" style="max-width: 700px; border-radius: 8px; border: none;">
+    
+    <div class="text-center mb-4">
+        <img src="{% static 'atelier/img/nav2.png' %}" width="150" height="150" alt="Logo Atelier" class="img-fluid" style="margin-top: 0px; background: transparent;">
+        
+        <h4 class="mb-0 mt-0 fw-bold text-dark">RECIBO #{{ venda.id }}</h4>
+        <p class="text-muted small">{{ venda.data_venda|date:"d/m/Y H:i" }}</p>
     </div>
 
-    <hr>
+    <hr class="my-3">
 
     <div class="mb-4">
-        <p class="mb-1 text-muted small text-uppercase fw-bold">Cliente</p>
-        <h5>{{ venda.nome_cliente|default:"Consumidor Final" }}</h5>
+        <p class="mb-1 text-muted small text-uppercase fw-bold">Nome do Cliente</p>
+        <h5 class="fw-normal">{{ venda.nome_cliente|default:"Consumidor Final" }}</h5>
     </div>
 
     <table class="table table-borderless">
         <thead class="border-bottom">
             <tr>
-                <th>Descrição do Produto</th>
-                <th class="text-end">Total</th>
+                <th class="ps-0">Descrição do Produto</th>
+                <th class="text-end pe-0">Total</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>{{ venda.produto.nome }}</td>
-                <td class="text-end">R$ {{ venda.valor_venda|stringformat:".2f" }}</td>
+                <td class="ps-0 py-3">{{ venda.produto.nome }}</td>
+                <td class="text-end pe-0 py-3">R$ {{ venda.valor_venda|stringformat:".2f" }}</td>
             </tr>
         </tbody>
         <tfoot>
             <tr class="border-top fw-bold fs-5">
-                <td class="text-end">VALOR TOTAL:</td>
-                <td class="text-end text-success">R$ {{ venda.valor_venda|stringformat:".2f" }}</td>
+                <td class="text-end ps-0 pt-3">VALOR TOTAL:</td>
+                <td class="text-end pe-0 pt-3 text-success">R$ {{ venda.valor_venda|stringformat:".2f" }}</td>
             </tr>
         </tfoot>
     </table>
 
-    <div class="mt-5 text-center">
-        <p class="small text-muted mb-0">Forma de Pagamento: {{ venda.get_metodo_pagamento_display }}</p>
-        <p class="small text-muted italic">Obrigado pela preferência!</p>
+    <div class="mt-5 text-center border-top pt-4">
+        <p class="small text-muted mb-2">
+            <strong>Pagamento:</strong> {{ venda.get_metodo_pagamento_display }}
+        </p>
+        
+        <div class="d-flex justify-content-center gap-3 mb-2">
+            <span class="small text-muted"><i class="fab fa-whatsapp me-1 text-success"></i> (53) 99157-8434</span>
+            <span class="small text-muted"><i class="fab fa-instagram me-1 text-danger"></i> @faby_panos_arte</span>
+        </div>
+        
+        <p class="small text-muted fst-italic mb-0">Obrigado pela preferência!</p>
     </div>
 </div>
 
 <style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .recibo-box {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
     @media print {
-        .no-print, .navbar, .btn { display: none !important; }
-        body { background-color: white !important; }
-        .container { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
-        .recibo-box { border: none !important; shadow: none !important; width: 100% !important; max-width: 100% !important; }
+        .no-print, .navbar, .btn, .fixed-bottom { 
+            display: none !important; 
+        }
+        body { 
+            background-color: white !important; 
+            margin: 0;
+            padding: 0;
+        }
+        .recibo-box { 
+            box-shadow: none !important; 
+            width: 100% !important; 
+            max-width: 100% !important; 
+            padding: 0px 40px !important; /* Zero padding no topo na impressão */
+        }
+        .text-success {
+            color: #198754 !important;
+            -webkit-print-color-adjust: exact;
+        }
     }
 </style>
 {% endblock %}

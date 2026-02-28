@@ -49,12 +49,12 @@ class EntradaMaterial(models.Model):
 
 
 class Produto(models.Model):
-    nome = models.CharField(max_length=100)
-    descricao = models.TextField(blank=True)
-    tempo_trabalho_horas = models.DecimalField(max_digits=5, decimal_places=2)
-    valor_hora_trabalho = models.DecimalField(max_digits=10, decimal_places=2, default=12.00)
-    margem_lucro_percentual = models.DecimalField(max_digits=5, decimal_places=2, default=50.0)
-    desconto_valor = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Desconto em Reais")
+    nome = models.CharField(max_length=100, verbose_name="Nome do Produto")
+    descricao = models.TextField(blank=True, verbose_name="Descrição do Produto")
+    tempo_trabalho_horas = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Tempo de Trabalho (Horas)", default=1.0)
+    valor_hora_trabalho = models.DecimalField(max_digits=10, decimal_places=2, default=12.00, verbose_name="Hora de Trabalho (R$)")
+    margem_lucro_percentual = models.DecimalField(max_digits=5, decimal_places=2, default=50.0, verbose_name="Margem de Lucro (%)")
+    desconto_valor = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Desconto em Reais", verbose_name="Desconto (R$)")
     imagem_frente = models.ImageField(upload_to='produtos/', null=True, blank=True)
     imagem_lado = models.ImageField(upload_to='produtos/', null=True, blank=True)
     imagem_tras = models.ImageField(upload_to='produtos/', null=True, blank=True)

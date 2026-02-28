@@ -4,6 +4,7 @@
 <div class="container py-4">
     <form method="post" enctype="multipart/form-data" class="needs-validation">
         {% csrf_token %}
+        <!--<p class="text-muted"><small><span class="text-danger">*</span> Campos obrigatórios</small></p>-->
         
         <div class="card shadow-sm mb-4 border-0">
             <div class="card-header bg-primary text-white">
@@ -14,8 +15,15 @@
                     {% for field in form %}
                         {% if "imagem" not in field.name %}
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">{{ field.label }}</label>
+                            <label class="form-label fw-bold">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span class="text-danger">*</span>
+                                {% endif %}
+                            </label>
+                            
                             {{ field }}
+                            
                             {% if field.help_text %}
                                 <div class="form-text">{{ field.help_text }}</div>
                             {% endif %}
@@ -71,7 +79,7 @@
                     <thead class="table-light">
                         <tr>
                             <th style="width: 50%;">Material</th>
-                            <th style="width: 30%;">Quantidade</th>
+                            <th style="width: 30%;">Quantidade utilizada</th>
                             <th style="width: 20%;" class="text-center">Remover?</th>
                         </tr>
                     </thead>

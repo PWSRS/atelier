@@ -1,6 +1,8 @@
 {% extends 'atelier/base.html' %}
+{% load static %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'atelier/css/detalhe_produto.css' %}">
 <div class="container py-4">
     <div class="mb-4">
         <a href="{% url 'atelier:lista_produtos' %}" class="btn btn-outline-secondary btn-sm px-3">
@@ -137,12 +139,4 @@
     </div>
 </div>
 
-<style>
-    .object-fit-contain {
-        object-fit: contain; /* Garante que a foto não seja cortada, mantendo a proporção */
-    }
-    .carousel-item {
-        background-color: #f8f9fa; /* Fundo cinza claro para fotos com fundo transparente */
-    }
-</style>
 {% endblock %}

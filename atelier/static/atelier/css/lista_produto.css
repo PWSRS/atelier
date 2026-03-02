@@ -1,0 +1,11 @@
+.object-fit-cover {
+    object-fit: cover;
+}
+.table thead th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.border-start {
+    border-width: 5px !important;
+}

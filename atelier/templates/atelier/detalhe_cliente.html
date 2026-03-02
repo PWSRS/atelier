@@ -1,0 +1,100 @@
+{% extends 'atelier/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-6 mb-0"><i class="fas fa-user-circle me-2 text-primary"></i>{{ cliente.nome }}</h1>
+            <p class="text-muted mb-0 small">Cliente desde: {{ cliente.data_cadastro|date:"d/m/Y" }}</p>
+        </div>
+        <div>
+            <a href="{% url 'atelier:editar_cliente' cliente.id %}" class="btn btn-outline-warning shadow-sm">
+                <i class="fas fa-edit me-1"></i> Editar
+            </a>
+            <a href="{% url 'atelier:lista_clientes' %}" class="btn btn-outline-secondary shadow-sm ms-2">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold">
+                    <i class="fas fa-address-card me-2"></i>Contatos e Endereço
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong><i class="fab fa-whatsapp text-success me-2"></i>WhatsApp:</strong><br>
+                        {% if cliente.telefone %}
+                            <a href="https://wa.me/55{{ cliente.telefone }}" target="_blank" class="text-decoration-none text-dark">
+                                {{ cliente.telefone }} <i class="fas fa-external-link-alt ms-1 small text-muted"></i>
+                            </a>
+                        {% else %}
+                            <span class="text-muted">Não informado</span>
+                        {% endif %}
+                    </p>
+                    <hr>
+                    <p class="mb-2"><strong><i class="fas fa-envelope text-primary me-2"></i>E-mail:</strong><br>
+                        {{ cliente.email|default:"Não informado" }}
+                    </p>
+                    <hr>
+                    <p class="mb-0"><strong><i class="fas fa-map-marker-alt text-danger me-2"></i>Endereço:</strong><br>
+                        {{ cliente.endereco|default:"Não informado" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-light"><i class="fas fa-shopping-bag me-2"></i>Histórico de Compras</h5>
+                    <span class="badge bg-primary">{{ compras.count }} Pedido(s)</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-uppercase small">
+                                <tr>
+                                    <th class="ps-4">Data</th>
+                                    <th>Produto</th>
+                                    <th>Pagamento</th>
+                                    <th class="text-end pe-4">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in compras %}
+                                <tr>
+                                    <td class="ps-4">{{ venda.data_venda|date:"d/m/Y" }}</td>
+                                    <td><span class="fw-bold">{{ venda.produto.nome }}</span></td>
+                                    <td><span class="badge bg-light text-dark border">{{ venda.get_metodo_pagamento_display }}</span></td>
+                                    <td class="text-end pe-4 fw-bold text-primary">R$ {{ venda.valor_venda|stringformat:".2f" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted italic">
+                                        <i class="fas fa-ghost fa-2x mb-3 d-block opacity-25"></i>
+                                        Nenhuma compra registrada para este cliente.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            {% if compras %}
+                            <tfoot class="table-light fw-bold border-top">
+                                <tr>
+                                    <td colspan="3" class="text-end ps-4 py-3">INVESTIMENTO TOTAL:</td>
+                                    <td class="text-end pe-4 py-3 text-success fs-5">
+                                        {# Aqui você pode somar via template ou via view. Vamos usar a lógica da view depois #}
+                                        R$ {{ total_compras|stringformat:".2f"|default:"0,00" }}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

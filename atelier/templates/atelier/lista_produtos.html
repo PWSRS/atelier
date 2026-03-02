@@ -1,5 +1,7 @@
 {% extends 'atelier/base.html' %}
+{% load static %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'atelier/css/lista_produtos.css' %}">
 
 {% if materiais_alerta %}
 <div class="alert alert-warning shadow-sm border-start border-4 border-warning">
@@ -47,7 +49,29 @@
         </div>
     </div>
 </div>
-
+<div class="row mb-4 text-center">
+    <div class="col-12">
+        <h5 class="text-muted fw-bold text-start mb-3">Resumo Financeiro Real (Histórico)</h5>
+    </div>
+    
+    <div class="col-md-6 mb-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-success">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase fw-bold">Total Faturado (Vendas)</h6>
+                <h4 class="text-success mb-0">R$ {{ total_faturado_real|stringformat:".2f" }}</h4>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-primary">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase fw-bold">Lucro Real Acumulado</h6>
+                <h4 class="text-primary mb-0">R$ {{ lucro_real_acumulado|stringformat:".2f" }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="card shadow-sm border-0">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold"><i class="fas fa-boxes me-2"></i>Catálogo de Produtos</h5>
@@ -107,9 +131,7 @@
 
                        <td class="text-center">
                             <div class="btn-group">
-                                <a href="{% url 'atelier:editar_produto' produto.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
+
                                 
                                 {% if produto.esta_vendido %}
                                     {% with venda=produto.vendas.first %}
@@ -125,6 +147,9 @@
                                     </span>
 
                                 {% else %}
+                                    <a href="{% url 'atelier:editar_produto' produto.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
                                     <a href="{% url 'atelier:excluir_produto' produto.id %}" class="btn btn-sm btn-outline-danger" title="Excluir">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
@@ -147,11 +172,5 @@
         </div>
     </div>
 </div>
-
-<style>
-    .object-fit-cover { object-fit: cover; }
-    .table thead th { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
-    .border-start { border-width: 5px !important; }
-</style>
 
 {% endblock %}

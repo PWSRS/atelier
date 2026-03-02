@@ -2,8 +2,25 @@ from django.db import models
 from django.utils import timezone
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from datetime import time
+from decimal import Decimal
+import datetime
 
+class Cliente(models.Model):
+    nome = models.CharField(max_length=150, verbose_name="Nome Completo")
+    telefone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefone/WhatsApp")
+    email = models.EmailField(blank=True, null=True, verbose_name="E-mail")
+    endereco = models.TextField(blank=True, null=True, verbose_name="Endereço")
+    data_cadastro = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.nome
+
+class CategoriaMaterial(models.Model):
+    nome = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.nome
 
 class Material(models.Model):
     
@@ -16,6 +33,7 @@ class Material(models.Model):
     ]
     
     nome = models.CharField(max_length=100)
+    categoria = models.ForeignKey(CategoriaMaterial, on_delete=models.SET_NULL, null=True, blank=True, related_name='materiais')
     # Pode ser metro, unidade, rolo, etc.
     unidade_medida = models.CharField(max_length=20, choices=UNIDADE_CHOICES) 
     preco_unitario = models.DecimalField(max_digits=10, decimal_places=2)
@@ -28,6 +46,7 @@ class Material(models.Model):
 
     def __str__(self):
         return self.nome
+    
 class EntradaMaterial(models.Model):
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='entradas')
     quantidade_adicionada = models.DecimalField(max_digits=10, decimal_places=2)
@@ -51,51 +70,75 @@ class EntradaMaterial(models.Model):
 class Produto(models.Model):
     nome = models.CharField(max_length=100, verbose_name="Nome do Produto")
     descricao = models.TextField(blank=True, verbose_name="Descrição do Produto")
-    tempo_trabalho_horas = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Tempo de Trabalho (Horas)", default=1.0)
+    
+    # Armazena horas e minutos (ex: 04:30)
+    tempo_trabalho_horas = models.TimeField(
+        verbose_name="Tempo de Trabalho (Horas)",
+        default=datetime.time(0, 0)
+    )
+    
     valor_hora_trabalho = models.DecimalField(max_digits=10, decimal_places=2, default=12.00, verbose_name="Hora de Trabalho (R$)")
     margem_lucro_percentual = models.DecimalField(max_digits=5, decimal_places=2, default=50.0, verbose_name="Margem de Lucro (%)")
     desconto_valor = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Desconto em Reais", verbose_name="Desconto (R$)")
+    
     imagem_frente = models.ImageField(upload_to='produtos/', null=True, blank=True)
     imagem_lado = models.ImageField(upload_to='produtos/', null=True, blank=True)
     imagem_tras = models.ImageField(upload_to='produtos/', null=True, blank=True)
     
     # Campo para salvar o preço final calculado
     preco_final = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0)
-    
-    def calcular_e_salvar_preco(self):
-        # Soma o custo de cada item da composição
-        custo_materiais = sum(item.subtotal_material() for item in self.materiais.all())
+
+    # --- MÉTODO AUXILIAR PARA CONVERTER TEMPO PARA DECIMAL (Retornando Decimal) ---
+    def get_tempo_em_decimal(self):
+        """Converte o objeto TimeField (HH:MM) para Decimal de horas (ex: 4.5)"""
+        if not self.tempo_trabalho_horas:
+            return Decimal('0.0')
         
-        # Custo da mão de obra
-        custo_mao_de_obra = self.tempo_trabalho_horas * self.valor_hora_trabalho
-        
-        # Preço Final com Margem
-        custo_total = custo_materiais + custo_mao_de_obra
-        self.preco_final = custo_total * (1 + (self.margem_lucro_percentual / 100))
-        
-        self.save()
-        
-        # Dentro da classe Produto no models.py
+        horas = Decimal(str(self.tempo_trabalho_horas.hour))
+        minutos = Decimal(str(self.tempo_trabalho_horas.minute))
+        # Divide minutos por 60 para ter a fração decimal da hora
+        return horas + (minutos / Decimal('60.0'))
+
     def get_custo_total_materiais(self):
-        return sum(item.subtotal_material() for item in self.materiais.all())
+        # Garante que o retorno seja sempre Decimal, mesmo que a lista esteja vazia
+        soma = sum(item.subtotal_material() for item in self.materiais.all())
+        return Decimal(str(soma)) if soma else Decimal('0.0')
+
+    def calcular_e_salvar_preco(self):
+        """Calcula e persiste o preço no banco de dados"""
+        custo_materiais = self.get_custo_total_materiais()
+        custo_mao_de_obra = self.get_tempo_em_decimal() * Decimal(str(self.valor_hora_trabalho))
+        
+        custo_total = custo_materiais + custo_mao_de_obra
+        margem = Decimal(str(self.margem_lucro_percentual))
+        
+        # Preço com margem aplicada
+        self.preco_final = custo_total * (Decimal('1') + (margem / Decimal('100')))
+        self.save()
 
     def get_preco_final_sugerido(self):
+        """Retorna o valor final com margem e desconto aplicado"""
         custo_materiais = self.get_custo_total_materiais()
-        custo_mao_de_obra = self.tempo_trabalho_horas * self.valor_hora_trabalho
-        total = custo_materiais + custo_mao_de_obra
-        # Aplica margem e DEPOIS subtrai o desconto
-        return (total * (1 + (self.margem_lucro_percentual / 100))) - self.desconto_valor
+        custo_mao_de_obra = self.get_tempo_em_decimal() * Decimal(str(self.valor_hora_trabalho))
+        
+        total_base = custo_materiais + custo_mao_de_obra
+        margem = Decimal(str(self.margem_lucro_percentual))
+        desconto = Decimal(str(self.desconto_valor))
+        
+        valor_com_margem = total_base * (Decimal('1') + (margem / Decimal('100')))
+        return valor_com_margem - desconto
 
     def get_lucro_liquido(self):
-        # O lucro real é o que sobra depois de pagar materiais e sua própria hora
+        """Preço de venda menos custos reais (materiais + mão de obra)"""
         preco_venda = self.get_preco_final_sugerido()
         custo_materiais = self.get_custo_total_materiais()
-        custo_mao_de_obra = self.tempo_trabalho_horas * self.valor_hora_trabalho
+        custo_mao_de_obra = self.get_tempo_em_decimal() * Decimal(str(self.valor_hora_trabalho))
         
-        return preco_venda - (custo_materiais + custo_mao_de_obra)
+        custo_total = custo_materiais + custo_mao_de_obra
+        return preco_venda - custo_total
     
     def esta_vendido(self):
-        return self.vendas.exists() # 'vendas' é o related_name que definimos no Model Venda
+        return self.vendas.exists()
 
     def __str__(self):
         return self.nome
@@ -122,18 +165,12 @@ class Venda(models.Model):
     valor_venda = models.DecimalField(max_digits=10, decimal_places=2)
     metodo_pagamento = models.CharField(max_length=20, choices=METODO_PAGAMENTO)
     observacoes = models.TextField(blank=True, null=True)
-    nome_cliente = models.CharField(max_length=150, blank=True, null=True, verbose_name="Nome do Cliente")
-    telefone_cliente = models.CharField(
-        max_length=20, 
-        blank=True, 
-        null=True, 
-        help_text="Ex: 51999999999 (Apenas números com DDD)",
-        verbose_name="Telefone/WhatsApp"
-    )
+    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='vendas')
 
     def gerar_mensagem_whatsapp(self):
+        nome = self.cliente.nome if self.cliente else "Cliente"
         texto = (
-            f"Olá {self.nome_cliente}! "
+            f"Olá {nome}! "
             f"Segue o recibo da sua compra: {self.produto.nome}. "
             f"Valor: R$ {self.valor_venda:.2f}"
         )
@@ -168,3 +205,17 @@ def devolver_estoque_na_delecao(sender, instance, **kwargs):
     material = instance.material
     material.quantidade_estoque += instance.quantidade_utilizada
     material.save()
+    
+def calcular_custo_mao_de_obra(self):
+    if not self.tempo_trabalho_horas:
+        return 0
+    
+    # Se tempo_trabalho_horas for um objeto time (HH:MM:SS)
+    if isinstance(self.tempo_trabalho_horas, time):
+        horas = self.tempo_trabalho_horas.hour
+        minutos = self.tempo_trabalho_horas.minute
+        tempo_decimal = horas + (minutos / 60)
+        return tempo_decimal * self.valor_hora_trabalho
+    
+    # Se ainda for um decimal (caso não tenha migrado o banco)
+    return float(self.tempo_trabalho_horas) * float(self.valor_hora_trabalho)

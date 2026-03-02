@@ -1,0 +1,61 @@
+{% extends 'atelier/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h2 class="text-center">
+                        {% if editando %}
+                            <i class="fas fa-user-edit me-2 text-warning"></i>Editar Cliente
+                        {% else %}
+                            <i class="fas fa-user-plus me-2 text-primary"></i>Novo Cliente
+                        {% endif %}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {# Renderiza os campos do form com classes do Bootstrap #}
+                        <div class="mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label fw-bold">Nome Completo *</label>
+                            {{ form.nome }}
+                            {{ form.nome.errors }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.telefone.id_for_label }}" class="form-label fw-bold">WhatsApp/Telefone</label>
+                                {{ form.telefone }}
+                                <div class="form-text">Apenas números com DDD. Ex: 51999999999</div>
+                                {{ form.telefone.errors }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">E-mail</label>
+                                {{ form.email }}
+                                {{ form.email.errors }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.endereco.id_for_label }}" class="form-label fw-bold">Endereço</label>
+                            {{ form.endereco }}
+                            {{ form.endereco.errors }}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'atelier:lista_clientes' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i>
+                                {% if editando %}Atualizar{% else %}Salvar Cliente{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

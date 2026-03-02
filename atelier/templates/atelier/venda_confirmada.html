@@ -6,14 +6,26 @@
         <h2 class="fw-bold">Venda Realizada!</h2>
         <p class="text-muted">O estoque de materiais foi atualizado com sucesso.</p>
         
+        <div class="alert alert-light border">
+            <strong>Cliente:</strong> {{ venda.cliente.nome }}<br>
+            <strong>Produto:</strong> {{ venda.produto.nome }}<br>
+            <strong>Valor:</strong> R$ {{ venda.valor_venda|stringformat:".2f" }}
+        </div>
+
         <div class="d-grid gap-2 mt-4">
-            {% if venda.telefone_cliente %}
-                <a href="https://wa.me/55{{ venda.telefone_cliente }}?text={{ venda.gerar_mensagem_whatsapp|urlencode }}" 
+            {# --- CORREÇÃO AQUI: Usando o link vindo da view --- #}
+            {% if link_whatsapp %}
+                <a href="{{ link_whatsapp }}" 
                 target="_blank" 
                 class="btn btn-success btn-lg">
                     <i class="fab fa-whatsapp me-2"></i> Enviar Recibo via WhatsApp
                 </a>
+            {% else %}
+                <button class="btn btn-secondary btn-lg" disabled>
+                    <i class="fab fa-whatsapp me-2"></i> WhatsApp não disponível
+                </button>
             {% endif %}
+            {# ------------------------------------------------- #}
 
             <a href="{% url 'atelier:gerar_recibo' venda.id %}" class="btn btn-primary">
                 <i class="fas fa-print me-2"></i> Ver/Imprimir Recibo (PDF)

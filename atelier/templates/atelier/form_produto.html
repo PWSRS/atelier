@@ -1,10 +1,12 @@
 {% extends 'atelier/base.html' %}
-
+{% load static %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'atelier/css/form_produto.css' %}">
 <div class="container py-4">
     <form method="post" enctype="multipart/form-data" class="needs-validation">
         {% csrf_token %}
-        <!--<p class="text-muted"><small><span class="text-danger">*</span> Campos obrigatórios</small></p>-->
+        
+        <input type="hidden" id="id_preco_final" name="preco_final" value="0">
         
         <div class="card shadow-sm mb-4 border-0">
             <div class="card-header bg-primary text-white">
@@ -47,21 +49,18 @@
                         <div class="p-3 border rounded bg-light h-100">
                             <label class="form-label d-block fw-bold"><i class="fas fa-image me-1"></i> Frente</label>
                             {{ form.imagem_frente }}
-                            <small class="text-muted d-block mt-2">Visão principal da peça</small>
                         </div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <div class="p-3 border rounded bg-light h-100">
                             <label class="form-label d-block fw-bold"><i class="fas fa-arrow-right me-1"></i> Lado</label>
                             {{ form.imagem_lado }}
-                            <small class="text-muted d-block mt-2">Detalhes laterais</small>
                         </div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <div class="p-3 border rounded bg-light h-100">
                             <label class="form-label d-block fw-bold"><i class="fas fa-redo me-1"></i> Verso</label>
                             {{ form.imagem_tras }}
-                            <small class="text-muted d-block mt-2">Acabamento traseiro</small>
                         </div>
                     </div>
                 </div>
@@ -71,7 +70,6 @@
         <div class="card shadow-sm mb-4 border-0">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                 <h4 class="mb-0"><i class="fas fa-boxes me-2"></i>Composição (Materiais)</h4>
-                <span class="badge bg-secondary">Cálculo de Estoque</span>
             </div>
             <div class="card-body p-0">
                 {{ formset.management_form }}
@@ -106,6 +104,28 @@
                                 {% endfor %}
                             </td>
                         </tr>
+                        {% empty %}
+                        <tr class="formset-row" style="display:none;" id="empty-form-template">
+                            <td>
+                                {{ formset.empty_form.id }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                    {{ formset.empty_form.material }}
+                                </div>
+                            </td>
+                            <td>{{ formset.empty_form.quantidade_utilizada }}</td>
+                            <td class="text-center">
+                                <div class="delete-wrapper">
+                                    <input type="checkbox" name="{{ formset.empty_form.prefix }}-DELETE" id="{{ formset.empty_form.auto_id }}_DELETE" class="d-none">
+                                    <label for="{{ formset.empty_form.auto_id }}_DELETE" class="btn btn-outline-danger btn-sm border-0">
+                                        <i class="fas fa-trash-can"></i> 
+                                    </label>
+                                </div>
+                                {% for hidden in formset.empty_form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -129,53 +149,175 @@
     </form>
 </div>
 
-<style>
-    .delete-wrapper input[type="checkbox"] { display: none; }
-    .delete-wrapper input[type="checkbox"]:checked ~ label { background-color: #dc3545; color: white; border-radius: 4px; }
-    .formset-row { transition: all 0.3s ease; }
-    .formset-row td { padding: 0.75rem; }
-    input[type="file"] { font-size: 0.8rem; }
-</style>
 
+{% verbatim %}
 <script>
-    // [Seu script anterior de adicionar e remover linhas permanece o mesmo aqui]
-    document.getElementById('add-item').addEventListener('click', function() {
-        const container = document.querySelector('#formset-container');
-        const managementForm = document.querySelector('input[name$="-TOTAL_FORMS"]');
-        const currentFormCount = parseInt(managementForm.value);
-        const rows = container.querySelectorAll('tr.formset-row');
-        const newRow = rows[0].cloneNode(true);
-        const regex = new RegExp(`-${0}-`, 'g');
-        newRow.innerHTML = newRow.innerHTML.replace(regex, `-${currentFormCount}-`);
-        const inputs = newRow.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            if (input.type === 'checkbox') { input.checked = false; } else { input.value = ''; }
-        });
-        container.appendChild(newRow);
-        managementForm.value = currentFormCount + 1;
-    });
-
-    document.querySelector('#formset-container').addEventListener('click', function(e) {
-        if (e.target.closest('.delete-wrapper label')) {
-            const row = e.target.closest('tr');
-            const checkbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-            const idInput = row.querySelector('input[name$="-id"]');
-            if (idInput && !idInput.value) {
-                row.remove();
-            } else {
-                setTimeout(() => { // Timeout para esperar o checkbox mudar de estado
-                    if (checkbox.checked) {
-                        row.style.opacity = '0.3';
-                        row.style.backgroundColor = '#ffe5e5';
-                        row.style.textDecoration = 'line-through';
-                    } else {
-                        row.style.opacity = '1';
-                        row.style.backgroundColor = 'transparent';
-                        row.style.textDecoration = 'none';
-                    }
-                }, 10);
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // --- FUNÇÃO AUXILIAR: Lê valores com segurança ---
+        function getFieldValue(id) {
+            const field = document.getElementById(id);
+            return field ? field.value : null;
         }
+
+        // --- FUNÇÃO DE CÁLCULO: Atualiza o preço final com base nos campos ---
+        function calcularPrecoFinal() {
+            const tempoRaw = getFieldValue('id_tempo_trabalho_horas'); 
+            const valorHora = parseFloat(getFieldValue('id_valor_hora_trabalho')) || 0;
+            const margemLucro = parseFloat(getFieldValue('id_margem_lucro_percentual')) || 0;
+            const desconto = parseFloat(getFieldValue('id_desconto_valor')) || 0;
+
+            let tempoDecimal = 0;
+            if (tempoRaw && tempoRaw.includes(':')) {
+                const [hours, minutes] = tempoRaw.split(':').map(Number);
+                tempoDecimal = hours + (minutes / 60);
+            }
+
+            const custoMaoDeObra = tempoDecimal * valorHora;
+
+            let custoMateriais = 0;
+            
+            // Seleciona todas as linhas de material
+            document.querySelectorAll('#formset-container .formset-row').forEach(row => {
+                // Verifica se a linha NÃO está marcada para exclusão
+                const checkbox = row.querySelector('input[name$="-DELETE"]');
+                if (checkbox && checkbox.checked) return; // Pula esta linha
+
+                // Soma a quantidade utilizada
+                const inputQty = row.querySelector('input[name$="-quantidade_utilizada"]');
+                if (inputQty) {
+                    custoMateriais += parseFloat(inputQty.value) || 0;
+                }
+            });
+
+            const custoTotal = custoMaoDeObra + custoMateriais;
+            const precoComLucro = custoTotal * (1 + (margemLucro / 100));
+            const precoFinal = precoComLucro - desconto;
+
+            const campoResultado = document.getElementById('id_preco_final');
+            if (campoResultado) {
+                campoResultado.value = precoFinal.toFixed(2);
+            }
+            console.log("Preço Final Calculado: ", precoFinal.toFixed(2));
+        }
+
+        // --- ADICIONA EVENTOS DE CÁLCULO NOS CAMPOS PRINCIPAIS ---
+        const camposParaMonitorar = [
+            'id_tempo_trabalho_horas',
+            'id_valor_hora_trabalho',
+            'id_margem_lucro_percentual',
+            'id_desconto_valor'
+        ];
+        
+        camposParaMonitorar.forEach(id => {
+            const field = document.getElementById(id);
+            if (field) {
+                field.addEventListener('input', calcularPrecoFinal);
+            }
+        });
+
+        // --- LÓGICA DO FORMSET (Adicionar/Remover Linhas) ---
+        const addButton = document.getElementById('add-item');
+        const container = document.getElementById('formset-container');
+        const managementForm = document.querySelector('input[name$="-TOTAL_FORMS"]');
+
+        if (addButton && container && managementForm) {
+            addButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                let formCount = parseInt(managementForm.value);
+                
+                // Busca o template oculto definido no {% empty %}
+                const template = document.getElementById('empty-form-template');
+                
+                if (template) {
+                    // Cenario 1: Tabela estava vazia (usando o template do {% empty %})
+                    const newRow = template.cloneNode(true);
+                    newRow.removeAttribute('id');
+                    newRow.style.display = ''; 
+
+                    // Substitui o __prefix__ do template pelo índice atual
+                    newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formCount);
+                    container.appendChild(newRow);
+                } else {
+                    // Cenario 2: Tabela já tinha linhas (clona a última)
+                    const rows = container.querySelectorAll('.formset-row');
+                    if (rows.length === 0) return;
+                    
+                    const lastRow = rows[rows.length - 1];
+                    const newRow = lastRow.cloneNode(true);
+                    
+                    // Regex para substituir o número do índice antigo pelo novo (ex: -0- para -1-)
+                    const regex = new RegExp(`-${formCount - 1}-`, 'g');
+                    newRow.innerHTML = newRow.innerHTML.replace(regex, `-${formCount}-`);
+                    
+                    // Limpa valores e remove ID do banco para ser um novo registro
+                    newRow.querySelectorAll('input, select').forEach(input => {
+                        if (input.type === 'checkbox') input.checked = false;
+                        else if (input.type !== 'button' && input.name !== 'csrfmiddlewaretoken') input.value = '';
+                    });
+                    
+                    // Remove o campo de ID (já que é uma linha nova)
+                    const idField = newRow.querySelector('input[name$="-id"]');
+                    if (idField) idField.value = '';
+                    
+                    container.appendChild(newRow);
+                }
+                
+                // Atualiza o contador total do Django
+                managementForm.value = formCount + 1;
+                
+                // Adiciona o evento de cálculo para os novos campos
+                container.querySelectorAll('input[name$="-quantidade_utilizada"]').forEach(input => {
+                    input.removeEventListener('input', calcularPrecoFinal);
+                    input.addEventListener('input', calcularPrecoFinal);
+                });
+            });
+        }
+
+        // --- LÓGICA PARA REMOVER/DELETAR (Corrigida) ---
+        if (container) {
+            container.addEventListener('click', function(e) {
+                if (e.target.closest('.delete-wrapper label')) {
+                    const row = e.target.closest('tr');
+                    const checkbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                    const idInput = row.querySelector('input[name$="-id"]');
+                    
+                    if (!checkbox) return;
+
+                    // Marca/Desmarca o checkbox de deleção
+                    checkbox.checked = !checkbox.checked;
+                    
+                    // LÓGICA: Se não tem ID, é nova, então removemos da tela.
+                    // Se tem ID, é do banco, então só esmaecemos.
+                    if (!idInput || !idInput.value) {
+                        row.remove();
+                    } else {
+                        // Estiliza visualmente para deleção no banco
+                        if (checkbox.checked) {
+                            row.style.opacity = '0.3';
+                            row.style.backgroundColor = '#ffe5e5';
+                            row.style.textDecoration = 'line-through';
+                        } else {
+                            row.style.opacity = '1';
+                            row.style.backgroundColor = 'transparent';
+                            row.style.textDecoration = 'none';
+                        }
+                    }
+                    calcularPrecoFinal(); // Recalcula
+                }
+            });
+            
+            // Monitora campos existentes ao carregar
+            container.querySelectorAll('input[name$="-quantidade_utilizada"]').forEach(input => {
+                input.removeEventListener('input', calcularPrecoFinal);
+                input.addEventListener('input', calcularPrecoFinal);
+            });
+        }
+        
+        // Cálculo inicial
+        calcularPrecoFinal();
     });
 </script>
+{% endverbatim %}
 {% endblock %}

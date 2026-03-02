@@ -10,19 +10,18 @@
                 <h5 class="text-muted mb-4">Peça: <strong>{{ produto.nome }}</strong></h5>
                 
                 <form method="post">
-                    {% csrf_token %}
+                    {% csrf_token %}                  
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cliente</label>
+                        <div class="input-group">
+                            {{ form.cliente }}
+                            <a href="{% url 'atelier:cadastrar_cliente' %}" class="btn btn-outline-primary" title="Cadastrar novo cliente">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                        </div>
+                    </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nome do Cliente</label>
-                        {{ form.nome_cliente }}
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">WhatsApp (DDD + Número)</label>
-                        {{ form.telefone_cliente }}
-                        <div class="form-text">Apenas números. Ex: 51988887777</div>
-                    </div>
-
+                    {# ... resto do formulário (valor_venda, metodo_pagamento, etc) ... #}
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Preço de Venda (R$)</label>
@@ -32,6 +31,11 @@
                             <label class="form-label fw-bold">Pagamento</label>
                             {{ form.metodo_pagamento }}
                         </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Observações</label>
+                        {{ form.observacoes }}
                     </div>
 
                     <div class="d-grid gap-2 mt-4">

@@ -3,9 +3,14 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1><i class="fas fa-layer-group me-2"></i>Controle de Estoque</h1>
-    <a href="{% url 'atelier:cadastrar_material' %}" class="btn btn-primary shadow-sm">
-        <i class="fas fa-plus me-1"></i> Novo Material
-    </a>
+    <div>
+        <a href="{% url 'atelier:cadastrar_categoria' %}" class="btn btn-outline-primary shadow-sm me-2">
+            <i class="fas fa-folder-plus me-1"></i> Nova Categoria
+        </a>
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#novoMaterialModal">
+            <i class="fas fa-plus me-1"></i> Novo Material
+        </button>
+    </div>
 </div>
 
 <div class="card shadow-sm border-0">
@@ -22,49 +27,86 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for material in materiais %}
-                    <tr>
-                        <td class="ps-4 fw-bold">{{ material.nome }}</td>
+                    {% for categoria in categorias %}
+                        <tr class="table-secondary">
+                            <td colspan="5" class="fw-bold text-uppercase text-primary ps-4">
+                                <i class="fas fa-folder me-2"></i>{{ categoria.nome }}
+                            </td>
+                        </tr>
                         
-                        <td class="text-center">
-                            {% if material.quantidade_estoque <= 0 %}
-                                <span class="badge bg-danger">Esgotado</span>
-                            {% elif material.precisa_repor %} <span class="badge bg-warning text-dark">{{ material.quantidade_estoque }}</span>
-                                <i class="fas fa-exclamation-triangle text-warning small" title="Estoque Baixo"></i>
-                            {% else %}
-                                <span class="badge bg-success">{{ material.quantidade_estoque }}</span>
-                            {% endif %}
-                        </td>
-
-                        <td>{{ material.get_unidade_medida_display }}</td>
-                        <td>R$ {{ material.preco_unitario|stringformat:".2f" }}</td>
-                        
-                        <td class="text-center">
-                            <div class="btn-group">
-                                <a href="{% url 'atelier:registrar_entrada' %}?material={{ material.id }}" 
-                                   class="btn btn-sm btn-success" title="Nova Compra/Repor">
-                                    <i class="fas fa-truck-loading"></i>
-                                </a>
-                                
-                                <a href="{% url 'atelier:editar_material' material.id %}" 
-                                   class="btn btn-sm btn-outline-warning" title="Editar Cadastro">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                
-                                <a href="{% url 'atelier:excluir_material' material.id %}" 
-                                   class="btn btn-sm btn-outline-danger" title="Excluir">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-5">
-                            Seu estoque está vazio. Comece cadastrando algo!
-                        </td>
-                    </tr>
+                        {% for material in categoria.materiais.all %}
+                        <tr>
+                            <td class="ps-5">{{ material.nome }}</td>
+                            <td class="text-center">
+                                {% if material.quantidade_estoque <= 0 %}
+                                    <span class="badge bg-danger">Esgotado</span>
+                                {% elif material.precisa_repor %} <span class="badge bg-warning text-dark">{{ material.quantidade_estoque }}</span>
+                                    <i class="fas fa-exclamation-triangle text-warning small" title="Estoque Baixo"></i>
+                                {% else %}
+                                    <span class="badge bg-success">{{ material.quantidade_estoque }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ material.get_unidade_medida_display }}</td>
+                            <td>R$ {{ material.preco_unitario|stringformat:".2f" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <a href="{% url 'atelier:registrar_entrada' %}?material={{ material.id }}" class="btn btn-sm btn-success" title="Nova Compra/Repor">
+                                        <i class="fas fa-truck-loading"></i>
+                                    </a>
+                                    <a href="{% url 'atelier:editar_material' material.id %}" class="btn btn-sm btn-outline-warning" title="Editar Cadastro">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'atelier:excluir_material' material.id %}" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted small py-2">
+                                <em>Nenhum material nesta categoria.</em>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     {% endfor %}
+
+                    {% if materiais_sem_categoria %}
+                    <tr class="table-secondary">
+                        <td colspan="5" class="fw-bold text-uppercase text-muted ps-4">
+                            <i class="fas fa-folder-open me-2"></i>Sem Categoria
+                        </td>
+                    </tr>
+                    {% for material in materiais_sem_categoria %}
+                        <tr>
+                            <td class="ps-5">{{ material.nome }}</td>
+                            <td class="text-center">
+                                {% if material.quantidade_estoque <= 0 %}
+                                    <span class="badge bg-danger">Esgotado</span>
+                                {% elif material.precisa_repor %} <span class="badge bg-warning text-dark">{{ material.quantidade_estoque }}</span>
+                                    <i class="fas fa-exclamation-triangle text-warning small" title="Estoque Baixo"></i>
+                                {% else %}
+                                    <span class="badge bg-success">{{ material.quantidade_estoque }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ material.get_unidade_medida_display }}</td>
+                            <td>R$ {{ material.preco_unitario|stringformat:".2f" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <a href="{% url 'atelier:registrar_entrada' %}?material={{ material.id }}" class="btn btn-sm btn-success" title="Nova Compra/Repor">
+                                        <i class="fas fa-truck-loading"></i>
+                                    </a>
+                                    <a href="{% url 'atelier:editar_material' material.id %}" class="btn btn-sm btn-outline-warning" title="Editar Cadastro">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'atelier:excluir_material' material.id %}" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    {% endif %}
                 </tbody>
             </table>
         </div>
@@ -76,4 +118,57 @@
         <i class="fas fa-arrow-left me-1"></i> Voltar para Produtos
     </a>
 </div>
+
+<div class="modal fade" id="novoMaterialModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cadastrar Novo Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formNovoMaterial" method="post" action="{% url 'atelier:cadastrar_material_modal' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ form_modal.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar Material</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formNovoMaterial');
+    const modalElement = document.getElementById('novoMaterialModal');
+    const modal = new bootstrap.Modal(modalElement);
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                modal.hide();
+                location.reload();
+            } else {
+                alert('Erro ao salvar o material. Verifique os campos.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+</script>
 {% endblock %}

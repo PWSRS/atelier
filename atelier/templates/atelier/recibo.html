@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'atelier/css/recibo.css' %}">
 <div class="container py-4 no-print text-center">
     <button onclick="window.print()" class="btn btn-dark mb-3 shadow-sm">
         <i class="fas fa-print me-2"></i> Imprimir ou Salvar PDF
@@ -13,7 +14,7 @@
     <div class="text-center mb-4">
         <img src="{% static 'atelier/img/nav2.png' %}" width="150" height="150" alt="Logo Atelier" class="img-fluid" style="margin-top: 0px; background: transparent;">
         
-        <h4 class="mb-0 mt-0 fw-bold text-dark">RECIBO #{{ venda.id }}</h4>
+        <h4 class="mb-0 mt-0 fw-bold text-dark">RECIBO nº {{ venda.id }}</h4>
         <p class="text-muted small">{{ venda.data_venda|date:"d/m/Y H:i" }}</p>
     </div>
 
@@ -21,7 +22,9 @@
 
     <div class="mb-4">
         <p class="mb-1 text-muted small text-uppercase fw-bold">Nome do Cliente</p>
-        <h5 class="fw-normal">{{ venda.nome_cliente|default:"Consumidor Final" }}</h5>
+        {# --- CORREÇÃO AQUI: Acessando o cliente relacionado --- #}
+        <h5 class="fw-normal">{{ venda.cliente.nome|default:"Consumidor Final" }}</h5>
+        {# ---------------------------------------------------- #}
     </div>
 
     <table class="table table-borderless">
@@ -58,34 +61,4 @@
         <p class="small text-muted fst-italic mb-0">Obrigado pela preferência!</p>
     </div>
 </div>
-
-<style>
-    body {
-        background-color: #f8f9fa;
-    }
-    .recibo-box {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    @media print {
-        .no-print, .navbar, .btn, .fixed-bottom { 
-            display: none !important; 
-        }
-        body { 
-            background-color: white !important; 
-            margin: 0;
-            padding: 0;
-        }
-        .recibo-box { 
-            box-shadow: none !important; 
-            width: 100% !important; 
-            max-width: 100% !important; 
-            padding: 0px 40px !important; /* Zero padding no topo na impressão */
-        }
-        .text-success {
-            color: #198754 !important;
-            -webkit-print-color-adjust: exact;
-        }
-    }
-</style>
 {% endblock %}

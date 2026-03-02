@@ -1,0 +1,30 @@
+body {
+    background-color: #f8f9fa;
+}
+.recibo-box {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+@media print {
+    .no-print,
+    .navbar,
+    .btn,
+    .fixed-bottom {
+        display: none !important;
+    }
+    body {
+        background-color: white !important;
+        margin: 0;
+        padding: 0;
+    }
+    .recibo-box {
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0px 40px !important; /* Zero padding no topo na impressão */
+    }
+    .text-success {
+        color: #198754 !important;
+        -webkit-print-color-adjust: exact;
+    }
+}

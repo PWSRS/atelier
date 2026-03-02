@@ -1,10 +1,13 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from atelier.models import Produto, Material, Venda, EntradaMaterial
-from atelier.forms import ProdutoForm, ItemComposicaoFormSet, MaterialForm, VendaForm, EntradaMaterialForm
+from atelier.models import Produto, Material, Venda, EntradaMaterial, CategoriaMaterial, Cliente
+from atelier.forms import ProdutoForm, ItemComposicaoFormSet, MaterialForm, VendaForm, EntradaMaterialForm, CategoriaMaterialForm, ClienteForm
 from django.db.models import Sum, F
 from decimal import Decimal
 from django.contrib import messages
 from urllib.parse import quote
+from django.http import JsonResponse
+from django.utils import timezone
+import datetime
 
 
 def index(request):
@@ -35,6 +38,18 @@ def registrar_entrada(request):
     
     return render(request, 'atelier/registrar_entrada.html', {'form': form})
    
+
+def cadastrar_categoria(request):
+    if request.method == 'POST':
+        form = CategoriaMaterialForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('atelier:lista_materiais') # Volta para a lista de materiais
+    else:
+        form = CategoriaMaterialForm()
+    
+    return render(request, 'atelier/cadastrar_categoria.html', {'form': form})
+
 def cadastrar_material(request):
     if request.method == 'POST':
         form = MaterialForm(request.POST)
@@ -46,10 +61,38 @@ def cadastrar_material(request):
     
     return render(request, 'atelier/form_material.html', {'form': form})
 
-def lista_materiais(request):
-    materiais = Material.objects.all()
-    return render(request, 'atelier/lista_materiais.html', {'materiais': materiais})
+def cadastrar_material_modal(request):
+    if request.method == 'POST':
+        form = MaterialForm(request.POST)
+        if form.is_valid():
+            material = form.save()
+            # Retorna sucesso e os dados básicos do novo material
+            return JsonResponse({
+                'success': True,
+                'nome': material.nome,
+                'categoria_id': material.categoria.id if material.categoria else None,
+                'unidade': material.get_unidade_medida_display(),
+                'preco': float(material.preco_unitario),
+                'quantidade': float(material.quantidade_estoque),
+            })
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+    return JsonResponse({'success': False}, status=400)
 
+def lista_materiais(request):
+    # Busca categorias e os materiais dentro de cada uma (eficiente para o banco de dados)
+    categorias = CategoriaMaterial.objects.prefetch_related('materiais').all()
+    
+    # Busca materiais que ainda não foram vinculados a nenhuma categoria
+    materiais_sem_categoria = Material.objects.filter(categoria__isnull=True)
+    
+    form_modal = MaterialForm()
+    
+    return render(request, 'atelier/lista_materiais.html', {
+        'categorias': categorias,
+        'materiais_sem_categoria': materiais_sem_categoria,
+        'form_modal': form_modal,
+    })
 
 def editar_material(request, material_id):
     # Busca o material pelo ID ou retorna erro 404 se não existir
@@ -83,20 +126,31 @@ def editar_produto(request, produto_id):
     
     if request.method == 'POST':
         form = ProdutoForm(request.POST, request.FILES, instance=produto)
-        formset = ItemComposicaoFormSet(request.POST, request.FILES, instance=produto)
+        formset = ItemComposicaoFormSet(request.POST, instance=produto) # Vincula ao produto
         
         if form.is_valid() and formset.is_valid():
-            form.save()
+            # Salva o produto e aplica a lógica do tempo (mesma da criação)
+            produto = form.save(commit=False)
+            
+            # (Opcional) Re-garantir a conversão se necessário, 
+            # mas se o form.py estiver com TimeInput, o Django cuida disso.
+            
+            produto.save()
             formset.save()
-            return redirect('atelier:detalhar_produto', produto_id=produto.id)
+            
+            # Recalcula o preço após salvar os itens do formset
+            produto.calcular_e_salvar_preco()
+            
+            return redirect('atelier:lista_produtos')
     else:
+        # No GET, carregamos o produto e seus materiais existentes
         form = ProdutoForm(instance=produto)
         formset = ItemComposicaoFormSet(instance=produto)
     
     return render(request, 'atelier/form_produto.html', {
         'form': form,
         'formset': formset,
-        'editando': True
+        'produto': produto # Útil para o título da página "Editando..."
     })
     
 def excluir_produto(request, produto_id):
@@ -111,37 +165,53 @@ def excluir_produto(request, produto_id):
 
 def criar_produto(request):
     if request.method == 'POST':
-        form = ProdutoForm(request.POST, request.FILES)  # Inclui request.FILES para lidar com uploads de imagem
-        formset = ItemComposicaoFormSet(request.POST, request.FILES,)
+        form = ProdutoForm(request.POST, request.FILES)
+        formset = ItemComposicaoFormSet(request.POST) 
         
         if form.is_valid() and formset.is_valid():
-            # Salva o produto primeiro
-            produto = form.save()
-            # Liga os materiais ao produto salvo e salva o formset
-            instancias_materiais = formset.save(commit=False)
-            for item in instancias_materiais:
-                item.produto = produto
-                item.save()
-            return redirect('atelier:lista_produtos') # Redireciona após salvar
+            # Salva o produto (o Django converte a string HH:MM para objeto time automaticamente)
+            produto = form.save(commit=False)
+            
+            # --- NÃO PRECISA MAIS DE CONVERSÃO MANUAL AQUI ---
+            # O get_tempo_em_decimal() do modelo cuidará disso na hora do cálculo
+            
+            produto.save()
+            
+            # Vincula o formset e salva
+            formset.instance = produto
+            formset.save()
+            
+            # --- CALCULA O PREÇO FINAL ---
+            # Chama o método do modelo para calcular baseado no TimeField
+            produto.calcular_e_salvar_preco()
+            
+            return redirect('atelier:lista_produtos')
     else:
         form = ProdutoForm()
-        formset = ItemComposicaoFormSet()
+        formset = ItemComposicaoFormSet(instance=Produto()) 
     
     return render(request, 'atelier/form_produto.html', {
         'form': form,
         'formset': formset
-    })
-
+    })  
+    
 def detalhar_produto(request, produto_id):
     # Busca o produto ou retorna 404
     produto = get_object_or_404(Produto, pk=produto_id)
     
-    # Cálculos para exibir no detalhamento
+    # --- CORREÇÃO AQUI ---
+    # Busca o custo dos materiais (retorna Decimal)
     custo_materiais = produto.get_custo_total_materiais()
-    custo_mao_de_obra = produto.tempo_trabalho_horas * produto.valor_hora_trabalho
+    
+    # Converte o tempo para Decimal antes de multiplicar (retorna Decimal)
+    tempo_decimal = produto.get_tempo_em_decimal()
+    custo_mao_de_obra = tempo_decimal * produto.valor_hora_trabalho
+    
+    # Cálculos usando os valores já corrigidos
     preco_final = produto.get_preco_final_sugerido()
     valor_lucro = preco_final - (custo_materiais + custo_mao_de_obra)
     custo_total_base = custo_materiais + custo_mao_de_obra
+    # ---------------------
 
     context = {
         'produto': produto,
@@ -167,14 +237,26 @@ def lista_produtos(request):
     produtos_disponiveis = [p for p in produtos if not p.esta_vendido()]
     faturamento_potencial = sum(p.get_preco_final_sugerido() for p in produtos_disponiveis)
     lucro_estimado = sum(p.get_lucro_liquido() for p in produtos_disponiveis)
+    
+    # --- NOVO CÁLCULO FINANCEIRO REAL ---
+    # 1. Total faturado (soma de todas as vendas)
+    total_faturado_real = Venda.objects.aggregate(total=Sum('valor_venda'))['total'] or 0
+    
+    # 2. Lucro Real Acumulado
+    # Buscamos produtos que têm venda associada
+    produtos_vendidos = Produto.objects.filter(vendas__isnull=False).distinct()
+    lucro_real_acumulado = sum(p.get_lucro_liquido() for p in produtos_vendidos)
+    # -------------------------------------
 
     # 4. Enviar TUDO para o template
     return render(request, 'atelier/lista_produtos.html', {
-        'produtos': produtos, # <-- Faltava isso!
+        'produtos': produtos,
         'materiais_alerta': materiais_alerta,
         'total_estoque_valor': total_estoque_valor,
         'faturamento_potencial': faturamento_potencial,
         'lucro_estimado': lucro_estimado,
+        'total_faturado_real': total_faturado_real,
+        'lucro_real_acumulado': lucro_real_acumulado,
     })
     
 def registrar_venda(request, produto_id):
@@ -183,31 +265,37 @@ def registrar_venda(request, produto_id):
     if request.method == 'POST':
         form = VendaForm(request.POST)
         if form.is_valid():
-            venda = form.save(commit=False)
-            venda.produto = produto
-            venda.save()
             
-            # --- LÓGICA DO WHATSAPP AQUI ---
+            venda = form.save(commit=False)
+            
+            # 1. Definimos o produto que veio da URL
+            venda.produto = produto
+            
+            # 2. Definimos a data e hora atual automaticamente
+            venda.data_venda = timezone.now()
+            
+            venda.save()
+            # ---------------------
+            
+            # ... Lógica do WhatsApp (igual antes) ...
             link_whatsapp = ""
-            if venda.telefone_cliente:
-                # Montamos a mensagem exatamente como você quer
+            if venda.cliente:
                 mensagem = (
-                    f"Olá {venda.nome_cliente}! "
+                    f"Olá {venda.cliente.nome}! "
                     f"Segue o recibo da sua compra: {venda.produto.nome}. "
                     f"Valor: R$ {venda.valor_venda:.2f}"
                 )
-                # O quote transforma espaços em %20 e acentos em códigos que o navegador entende
-                mensagem_codificada = quote(mensagem)
-                link_whatsapp = f"https://wa.me/55{venda.telefone_cliente}?text={mensagem_codificada}"
-            # -------------------------------
+                link_whatsapp = f"https://wa.me/55{venda.cliente.telefone}?text={quote(mensagem)}"
 
             messages.success(request, f"Venda de {produto.nome} registrada!")
-            
-            # Passamos o 'venda' E o 'link_whatsapp' para o template
             return render(request, 'atelier/venda_confirmada.html', {
                 'venda': venda, 
                 'link_whatsapp': link_whatsapp
             })
+        else:
+            # DICA: Ver o erro no terminal
+            print("❌ FORMULÁRIO INVÁLIDO")
+            print(form.errors) 
             
     else:
         preco_sugerido = round(produto.get_preco_final_sugerido(), 2)
@@ -219,5 +307,55 @@ def registrar_venda(request, produto_id):
 def gerar_recibo(request, venda_id):
     venda = get_object_or_404(Venda, id=venda_id)
     return render(request, 'atelier/recibo.html', {'venda': venda})
+
+
+# LISTAGEM GERAL
+def lista_clientes(request):
+    clientes = Cliente.objects.all().order_by('nome')
+    return render(request, 'atelier/lista_clientes.html', {'clientes': clientes})
+
+# CADASTRO
+def cadastrar_cliente(request):
+    if request.method == 'POST':
+        form = ClienteForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('atelier:lista_clientes')
+    else:
+        form = ClienteForm()
+    return render(request, 'atelier/form_cliente.html', {'form': form, 'editando': False})
+
+# EDIÇÃO
+def editar_cliente(request, cliente_id):
+    cliente = get_object_or_404(Cliente, pk=cliente_id)
+    if request.method == 'POST':
+        form = ClienteForm(request.POST, instance=cliente)
+        if form.is_valid():
+            form.save()
+            return redirect('atelier:lista_clientes')
+    else:
+        form = ClienteForm(instance=cliente)
+    return render(request, 'atelier/form_cliente.html', {'form': form, 'editando': True})
+
+# EXCLUSÃO
+def excluir_cliente(request, cliente_id):
+    cliente = get_object_or_404(Cliente, pk=cliente_id)
+    if request.method == 'POST':
+        cliente.delete()
+        return redirect('atelier:lista_clientes')
+    return render(request, 'atelier/confirmar_exclusao.html', {'item': cliente, 'tipo': 'cliente'})
+
+# DETALHES E HISTÓRICO DE COMPRAS (A parte "Prudente")
+def detalhe_cliente(request, cliente_id):
+    cliente = get_object_or_404(Cliente, pk=cliente_id)
+    # Buscamos as vendas vinculadas a este cliente específico
+    compras = cliente.vendas.all().order_by('-data_venda')
+    total_compras = compras.aggregate(Sum('valor_venda'))['valor_venda__sum'] or 0
+    return render(request, 'atelier/detalhe_cliente.html', {
+        'cliente': cliente,
+        'compras': compras,
+        'total_compras': total_compras
+    })
+
 
 

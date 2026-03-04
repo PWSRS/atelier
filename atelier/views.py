@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from atelier.models import Produto, Material, Venda, EntradaMaterial, CategoriaMaterial, Cliente
 from atelier.forms import ProdutoForm, ItemComposicaoFormSet, MaterialForm, VendaForm, EntradaMaterialForm, CategoriaMaterialForm, ClienteForm
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Prefetch
 from decimal import Decimal
 from django.contrib import messages
 from urllib.parse import quote
@@ -80,11 +80,17 @@ def cadastrar_material_modal(request):
     return JsonResponse({'success': False}, status=400)
 
 def lista_materiais(request):
-    # Busca categorias e os materiais dentro de cada uma (eficiente para o banco de dados)
-    categorias = CategoriaMaterial.objects.prefetch_related('materiais').all()
+    # Cria uma instrução de busca para materiais já ordenada
+    prefetch_materiais = Prefetch(
+        'materiais', 
+        queryset=Material.objects.all().order_by('nome')
+    )
     
-    # Busca materiais que ainda não foram vinculados a nenhuma categoria
-    materiais_sem_categoria = Material.objects.filter(categoria__isnull=True)
+    # Aplica essa instrução na busca das categorias
+    categorias = CategoriaMaterial.objects.prefetch_related(prefetch_materiais).all().order_by('nome')
+    
+    # Busca materiais sem categoria e ordena alfabeticamente
+    materiais_sem_categoria = Material.objects.filter(categoria__isnull=True).order_by('nome')
     
     form_modal = MaterialForm()
     

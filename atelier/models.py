@@ -26,10 +26,13 @@ class Material(models.Model):
     
     UNIDADE_CHOICES = [
         ('metro', 'Metro'),
+        ('centímetro', 'Centímetro'),
+        ('milímetro', 'Milímetro'),
         ('unidade', 'Unidade'),
         ('rolo', 'Rolo'),
         ('quilo', 'Quilo'),
         ('grama', 'Grama'),
+        ('carretel', 'Carretel'),
     ]
     
     nome = models.CharField(max_length=100)

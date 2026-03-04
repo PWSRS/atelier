@@ -16,13 +16,29 @@ class MaterialForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            # Aplica a classe form-control para todos os campos
-            for field_name, field in self.fields.items():
-                field.widget.attrs['class'] = 'form-control'
+        super().__init__(*args, **kwargs)
+    
+        if 'unidade_medida' in self.fields:
+            # Pega as escolhas atuais, remove o item vazio (se houver) e ordena pelo texto (o segundo item da tupla)
+            choices = list(self.fields['unidade_medida'].choices)
             
-            # Opcional: Adicionar um placeholder amigável para o preço
-            self.fields['preco_unitario'].widget.attrs['placeholder'] = '0.00'
+            # O primeiro item costuma ser ('', '---------'), mantemos ele no topo se existir
+            blank_choice = choices[0] if choices and choices[0][0] == '' else None
+            data_choices = [c for c in choices if c[0] != '']
+            
+            # Ordena alfabeticamente pelo rótulo (c[1])
+            data_choices.sort(key=lambda x: x[1])
+            
+            # Reidrata o campo com a lista ordenada
+            self.fields['unidade_medida'].choices = ([blank_choice] if blank_choice else []) + data_choices
+
+            # Aplica a classe para todos os campos
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+    
+    
+    
+    
 
 # 2. Formulário Principal do Produto
 class ProdutoForm(forms.ModelForm):

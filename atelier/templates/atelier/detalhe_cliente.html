@@ -67,7 +67,17 @@
                                 <tr>
                                     <td class="ps-4">{{ venda.data_venda|date:"d/m/Y" }}</td>
                                     <td><span class="fw-bold">{{ venda.produto.nome }}</span></td>
-                                    <td><span class="badge bg-light text-dark border">{{ venda.get_metodo_pagamento_display }}</span></td>
+                                    <td>
+                                        {% if venda.get_metodo_pagamento_display == "Pix" %}
+                                            <span class="badge bg-primary text-white border">{{ venda.get_metodo_pagamento_display }}</span>
+                                        {% elif venda.get_metodo_pagamento_display == "Dinheiro" %}
+                                            <span class="badge bg-success text-dark border">{{ venda.get_metodo_pagamento_display }}</span>
+                                        {% elif venda.get_metodo_pagamento_display == "Crédito" %}
+                                            <span class="badge bg-warning text-dark border">{{ venda.get_metodo_pagamento_display }}</span>
+                                        {% else %}
+                                        <span class="badge bg-light text-dark border">{{ venda.get_metodo_pagamento_display }}</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="text-end pe-4 fw-bold text-primary">R$ {{ venda.valor_venda|stringformat:".2f" }}</td>
                                 </tr>
                                 {% empty %}
